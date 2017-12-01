@@ -1,28 +1,26 @@
-from datetime import datetime, tzinfo
-import logging
-import pytz
-
-import tzlocal
-
-
 """
 The strftime directive %z (with a lowercase z!) indicates time zone offset,
 i.e. the signed time difference from UTC/GMT of the form +HHMM or -HHMM.
 If you try to use this date format in Python 2 logging module you'll get the
 unpleasant behaviour of silent failure.  Use LocalFormatter as a drop-in
 replacement for built-in logging.Formatter if you intend to use a time zone
-offset in your logging handlers under Python 2.
+offset in your logging date format under Python 2.
+
+See footnote https://docs.python.org/2/library/time.html#id2
 """
+import logging
+from datetime import datetime
+from datetime import tzinfo
+
+import pytz
+import tzlocal
 
 
 __version__ = '0.1'
 
 
 class LocalFormatter(logging.Formatter):
-    """
-    See footnote https://docs.python.org/2/library/time.html#id2
-    """
-
+    """a stdlib logging formatter that does the right thing with %z in the datefmt"""
     def __init__(self, fmt=None, datefmt=None, tz=None):
         if tz is None:
             self.tz = tzlocal.get_localzone()
@@ -39,7 +37,7 @@ class LocalFormatter(logging.Formatter):
     def formatTime(self, record, datefmt=None):
         # Parent implementation expects the time record to be some sort of 9-item
         # sequence (e.g. time.struct_time).  Override impl to use datetime.strftime
-        # instead of time.strftime to get around this limitation.
+        # instead of time.strftime to bypass this limitation.
         if datefmt is None:
             datefmt = '%Y-%m-%d %H:%M:%S%z'
         converted = self.converter(record.created)
